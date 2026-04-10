@@ -63,41 +63,40 @@ def create_html(soup, domain):
     shutil.move(f"{name}.html", f"Websites/{name}.html") 
 
 def create_soup(current_url):
-    if normalize(current_url) in visited:
-        return
     try:
         current_url_response = requests.get(current_url, verify=False, timeout=5)
     except requests.exceptions.RequestException as e:
         print(f"Error fetching {current_url}: {e}")
         return
     if current_url_response.status_code == 200:
-        visited.add(normalize(current_url))
-        
         soup = BeautifulSoup(current_url_response.text, 'html.parser')
         getlinks(soup, current_url)
-        words, keywords = getkeywords(soup)
+        
+        # Only process details if not already visited
+        if normalize(current_url) not in visited:
+            visited.add(normalize(current_url))
+            words, keywords = getkeywords(soup)
 
+            for word, cnt in keywords:
+                cursor.execute(
+                    "INSERT OR REPLACE INTO page_words (page_url, word, word_count) VALUES (?, ?, ?)",
+                    (current_url, word, cnt)
+                )
 
-        for word, cnt in keywords:
-            cursor.execute(
-                "INSERT OR REPLACE INTO page_words (page_url, word, word_count) VALUES (?, ?, ?)",
-                (current_url, word, cnt)
-            )
+            bigrams = Counter(get_bigrams(words)).most_common(10)
+            for phrase, count in bigrams:
+                cursor.execute(
+                    "INSERT OR REPLACE INTO pages (url, bigram, bigram_count) VALUES (?, ?, ?)",
+                    (current_url, phrase, count)
+                )
+            trigrams = Counter(get_trigrams(words)).most_common(10)
+            for phrase, count in trigrams:
+                cursor.execute(
+                    "INSERT OR REPLACE INTO pages (url, trigram, trigram_count) VALUES (?, ?, ?)",
+                    (current_url, phrase, count)
+                )
 
-        bigrams = Counter(get_bigrams(words)).most_common(10)
-        for phrase, count in bigrams:
-            cursor.execute(
-                "INSERT OR REPLACE INTO pages (url, bigram, bigram_count) VALUES (?, ?, ?)",
-                (current_url, phrase, count)
-        )
-        trigrams = Counter(get_trigrams(words)).most_common(10)
-        for phrase, count in trigrams:
-            cursor.execute(
-                "INSERT OR REPLACE INTO pages (url, trigram, trigram_count) VALUES (?, ?, ?)",
-                (current_url, phrase, count)
-        )
-
-        conn.commit()
+            conn.commit()
 
         domain = URLtoTextDomain(current_url)
         create_html(soup, domain)
@@ -121,7 +120,7 @@ def getlinks(soup, base_url):
         if not parsed.netloc or parsed.scheme not in ('http', 'https'):
             continue
         normalized = normalize(absolute_url)
-        if normalized not in seen_urls and normalized not in visited:
+        if normalized not in seen_urls:
             URL_List.append(normalized)
             seen_urls.add(normalized)
 
