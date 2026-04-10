@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 URL_List  = ["https://example.com/"]
 counter = 0
 current_url = URL_List[counter]
-
+SAVE_HTML = False
 
 visited = set() 
 seen_urls = set(URL_List)
@@ -53,10 +53,12 @@ visited = {normalize(row[0]) for row in rows if row[0]}
 
 def create_html(soup, domain):
     name = domain
+    if not SAVE_HTML:
+        return
     os.makedirs("Websites", exist_ok=True)
     with open(f"{name}.html", "w", encoding="utf-8") as f:
         f.write(str(soup))
-    shutil.move(f"{name}.html", f"Websites/{name}.html")
+    shutil.move(f"{name}.html", f"Websites/{name}.html") 
 
 def create_soup(current_url):
     if normalize(current_url) in visited:
