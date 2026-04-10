@@ -8,10 +8,12 @@ from urllib.parse import urlparse
 import sqlite3
 from urllib.parse import urljoin
 
+SAVE_HTML = False
+
 URL_List  = ["https://example.com/"]
 counter = 0
 current_url = URL_List[counter]
-SAVE_HTML = False
+
 
 visited = set() 
 seen_urls = set(URL_List)
