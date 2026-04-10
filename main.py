@@ -1,3 +1,4 @@
+import os
 import requests
 import re
 from collections import Counter
@@ -52,6 +53,7 @@ visited = {normalize(row[0]) for row in rows if row[0]}
 
 def create_html(soup, domain):
     name = domain
+    os.makedirs("Websites", exist_ok=True)
     with open(f"{name}.html", "w", encoding="utf-8") as f:
         f.write(str(soup))
     shutil.move(f"{name}.html", f"Websites/{name}.html")
@@ -121,7 +123,7 @@ def getlinks(soup, base_url):
 
 def getkeywords(soup):
     text = soup.get_text().lower()
-    text = re.sub("[^a-z0-9\s]", "", text)
+    text = re.sub(r"[^a-z0-9\s]", "", text)
     words = text.split()
     ignorewords = {"the", "and", "is", "in", "to", "of", "a", "that", "it", "with", "as", "for", "was", "on", "are", "by", "this", "be", "or", "from", "at", "which", "but", "not", "all", "we", "they", "their", "has", "have", "if", "can", "do", "he", "she", "my", "me", "his", "her", "its", "our", "us", "them", "what", "who", "when", "where", "why", "how"}
     words = [w for w in words if w not in ignorewords and len(w) > 2]
