@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import sqlite3
 from urllib.parse import urljoin
 
-URL_List  = ["https://fmhy.net/internet-tools"]
+URL_List  = ["https://example.com/"]
 counter = 0
 current_url = URL_List[counter]
 
