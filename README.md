@@ -10,6 +10,4 @@ You can toggle the file saving into the Websites folder, default is off
 Future Plans:
 - Multithreading
 - Respecting Robots.txt (Really a requirement tbh... keep in mind while running that this isn't available right now)
-- Tranisitioning from SQL lite to Postgress
-
 
