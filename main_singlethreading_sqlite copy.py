@@ -72,7 +72,8 @@ def create_html(soup, domain):
 
 def create_soup(current_url):
     try:
-        current_url_response = requests.get(current_url, verify=False, timeout=5)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        current_url_response = requests.get(current_url, verify=False, timeout=5, headers=headers)
     except requests.exceptions.RequestException as e:
         print(f"Error fetching {current_url}: {e}")
         return
