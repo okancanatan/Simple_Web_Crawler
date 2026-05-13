@@ -14,7 +14,7 @@ NUM_THREADS = int(os.getenv("NUM_THREADS", os.cpu_count() or 5))
 
 SAVE_HTML = False
 
-URL_List  = ["https://example.com/"]
+URL_List  = ["https://example.com/", "https://en.wikipedia.org/wiki/Main_Page", "https://dmoz.org/"]
 counter = 0
 current_url = URL_List[counter]
 
@@ -24,8 +24,13 @@ seen_urls = set(URL_List)
 
 def normalize(url: str) -> str:
     return url.rstrip('/')
-
-DB_Path = "crawler.db" 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_Path = os.path.join(BASE_DIR, 'crawler.db')
+if os.path.exists(DB_Path):
+    try:
+        os.remove(DB_Path)
+    except OSError as e:
+        print(f"Warning: could not remove existing DB {DB_Path}: {e}")
 
 def make_conn(path=DB_Path):
     conn = sqlite3.connect(path, timeout=30, check_same_thread=False)

@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import sqlite3
 from urllib.parse import urljoin
 
-SAVE_HTML = True
+SAVE_HTML = False
 
 URL_List  = ["https://example.com/", "https://en.wikipedia.org/wiki/Main_Page", "https://dmoz.org/"]
 counter = 0
