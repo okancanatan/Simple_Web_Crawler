@@ -7,6 +7,7 @@ import shutil
 from urllib.parse import urlparse
 import sqlite3
 from queue import Queue
+import time
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
 
@@ -14,7 +15,7 @@ NUM_THREADS = int(os.getenv("NUM_THREADS", os.cpu_count() or 5))
 
 SAVE_HTML = False
 
-URL_List  = ["https://example.com/", "https://en.wikipedia.org/wiki/Main_Page", "https://dmoz.org/"]
+URL_List  = ["https://example.com/", "https://en.wikipedia.org/wiki/Main_Page", "https://dmoz.org/", "https://news.ycombinator.com/"]
 counter = 0
 current_url = URL_List[counter]
 
@@ -174,8 +175,13 @@ def get_trigrams(words):
     return [" ".join(words[i:i+3]) for i in range(len(words)-2)]
 
 with ThreadPoolExecutor(max_workers=5) as executor:
-    while counter < len(URL_List):
-        current_url = URL_List[counter]
-        executor.submit(create_soup, current_url)
-        counter += 1
-
+    counter = 0
+    while True:
+        if counter < len(URL_List):
+            current_url = URL_List[counter]
+            executor.submit(create_soup, current_url)
+            counter += 1
+        else:
+            time.sleep(0.5)
+            if counter >= len(URL_List):
+                print(f"Finished crawling. Total pages visited: {len(visited)}")
