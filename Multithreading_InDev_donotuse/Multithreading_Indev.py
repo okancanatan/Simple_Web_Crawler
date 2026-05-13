@@ -8,6 +8,9 @@ from urllib.parse import urlparse
 import sqlite3
 from queue import Queue
 from urllib.parse import urljoin
+from concurrent.futures import ThreadPoolExecutor
+
+NUM_THREADS = int(os.getenv("NUM_THREADS", os.cpu_count() or 5))
 
 SAVE_HTML = False
 
@@ -165,9 +168,9 @@ def get_bigrams(words):
 def get_trigrams(words):
     return [" ".join(words[i:i+3]) for i in range(len(words)-2)]
 
+with ThreadPoolExecutor(max_workers=5) as executor:
+    while counter < len(URL_List):
+        current_url = URL_List[counter]
+        executor.submit(create_soup, current_url)
+        counter += 1
 
-
-while counter < len(URL_List):
-    current_url = URL_List[counter]
-    create_soup(current_url)
-    counter += 1
