@@ -9,5 +9,5 @@ You can toggle the file saving into the Websites folder, default is off
 
 Future Plans:
 - Multithreading
-- Self Hosted Search Enging (it'd probably be kinda eh but could be cool)
+- Respecting Robots.txt (Really a requirement tbh... keep in mind while running that this isn't available right now)
 
