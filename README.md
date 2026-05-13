@@ -11,3 +11,5 @@ Future Plans:
 - Multithreading
 - Respecting Robots.txt (Really a requirement tbh... keep in mind while running that this isn't available right now)
 
+- **BY DEFAULT SAVING WEBSITES HTML IS OFF**
+
