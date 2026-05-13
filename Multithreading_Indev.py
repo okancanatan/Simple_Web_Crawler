@@ -1,7 +1,7 @@
 import os
 import requests
 import re
-from collections import Counter
+from collections import Counter, deque
 from bs4 import BeautifulSoup
 import shutil
 from urllib.parse import urlparse
@@ -9,7 +9,11 @@ import sqlite3
 from queue import Queue
 import time
 from urllib.parse import urljoin
+import urllib3
 from concurrent.futures import ThreadPoolExecutor
+
+# Warnings Disabled. Remove while testing
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 NUM_THREADS = int(os.getenv("NUM_THREADS", os.cpu_count() or 5))
 
@@ -19,6 +23,7 @@ URL_List  = ["https://example.com/", "https://en.wikipedia.org/wiki/Main_Page", 
 counter = 0
 current_url = URL_List[counter]
 
+retry_queue = deque()
 
 visited = set() 
 seen_urls = set(URL_List)
@@ -31,7 +36,9 @@ if os.path.exists(DB_Path):
     try:
         os.remove(DB_Path)
     except OSError as e:
+        # If the DB is locked by another process, fall back to a new file.
         print(f"Warning: could not remove existing DB {DB_Path}: {e}")
+        DB_Path = os.path.join(BASE_DIR, f"crawler_{int(time.time())}.db")
 
 def make_conn(path=DB_Path):
     conn = sqlite3.connect(path, timeout=30, check_same_thread=False)
@@ -98,14 +105,19 @@ def create_html(soup, domain):
 
 def create_soup(current_url):
     try:
-        current_url_response = requests.get(current_url, verify=False, timeout=5)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        current_url_response = requests.get(current_url, verify=False, timeout=5, headers=headers)
     except requests.exceptions.RequestException as e:
         print(f"Error fetching {current_url}: {e}")
+        return
+    if current_url_response.status_code == 429:
+        print(f"Rate limited on {current_url}. Adding to retry queue.")
+        retry_queue.append(current_url)
         return
     if current_url_response.status_code == 200:
         soup = BeautifulSoup(current_url_response.text, 'html.parser')
         getlinks(soup, current_url)
-        
+
         # Only process details if not already visited
         if normalize(current_url) not in visited:
             visited.add(normalize(current_url))
@@ -134,8 +146,9 @@ def create_soup(current_url):
 
         domain = URLtoTextDomain(current_url)
         create_html(soup, domain)
-    else:
-        print(f"failed : {current_url_response.status_code}")
+        return
+
+    print(f"failed : {current_url_response.status_code}")
 
 def URLtoTextDomain(url):
     domain = url.split("//")[-1].split("/")[0]
@@ -174,14 +187,18 @@ def get_bigrams(words):
 def get_trigrams(words):
     return [" ".join(words[i:i+3]) for i in range(len(words)-2)]
 
+
 with ThreadPoolExecutor(max_workers=5) as executor:
     counter = 0
     while True:
-        if counter < len(URL_List):
+        if retry_queue:
+            current_url = retry_queue.popleft()
+            executor.submit(create_soup, current_url)
+        elif counter < len(URL_List):
             current_url = URL_List[counter]
             executor.submit(create_soup, current_url)
             counter += 1
         else:
-            time.sleep(0.5)
-            if counter >= len(URL_List):
+            time.sleep(2)
+            if not retry_queue and counter >= len(URL_List):
                 print(f"Finished crawling. Total pages visited: {len(visited)}")
