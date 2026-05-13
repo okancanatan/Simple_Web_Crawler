@@ -8,9 +8,9 @@ from urllib.parse import urlparse
 import sqlite3
 from urllib.parse import urljoin
 
-SAVE_HTML = False
+SAVE_HTML = True
 
-URL_List  = ["https://example.com/"]
+URL_List  = ["https://example.com/", "https://en.wikipedia.org/wiki/Main_Page", "https://dmoz.org/"]
 counter = 0
 current_url = URL_List[counter]
 
@@ -21,7 +21,15 @@ seen_urls = set(URL_List)
 def normalize(url: str) -> str:
     return url.rstrip('/')
 
-conn = sqlite3.connect('crawler.db')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, 'crawler.db')
+if os.path.exists(db_path):
+    try:
+        os.remove(db_path)
+    except OSError as e:
+        print(f"Warning: could not remove existing DB {db_path}: {e}")
+
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS pages (
@@ -141,8 +149,11 @@ def get_trigrams(words):
     return [" ".join(words[i:i+3]) for i in range(len(words)-2)]
 
 
-
-while counter < len(URL_List):
-    current_url = URL_List[counter]
-    create_soup(current_url)
-    counter += 1
+while True:
+    if counter < len(URL_List):
+        current_url = URL_List[counter]
+        create_soup(current_url)
+        counter += 1
+    else:
+        print(f"Finished crawling. Total pages visited: {len(visited)}")
+        break
